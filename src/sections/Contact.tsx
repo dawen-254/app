@@ -15,6 +15,7 @@ const Contact = () => {
     const section = sectionRef.current;
     const content = contentRef.current;
     if (!section || !content) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Content entrance animation
     const contentTl = gsap.timeline({
@@ -28,13 +29,13 @@ const Contact = () => {
     contentTl.fromTo(
       content.children,
       {
-        y: 60,
+        y: prefersReducedMotion ? 0 : 60,
         opacity: 0,
       },
       {
         y: 0,
         opacity: 1,
-        duration: 0.8,
+        duration: prefersReducedMotion ? 0.45 : 0.8,
         stagger: 0.1,
         ease: 'expo.out',
       }
@@ -45,6 +46,7 @@ const Contact = () => {
     }
 
     return () => {
+      contentTl.kill();
       triggersRef.current.forEach(trigger => trigger.kill());
       triggersRef.current = [];
     };
@@ -69,7 +71,7 @@ const Contact = () => {
     <section
       ref={sectionRef}
       id="contact"
-      className="relative min-h-screen w-full bg-black py-24 overflow-hidden"
+      className="relative min-h-screen w-full bg-black py-20 sm:py-24 overflow-hidden"
     >
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-5">
@@ -78,7 +80,7 @@ const Contact = () => {
 
       <div className="relative z-10 w-full px-6 lg:px-12">
         {/* Section header */}
-        <div className="mb-16 text-center">
+        <div className="mb-12 md:mb-16 text-center">
           {contactConfig.sectionLabel && (
             <div className="flex items-center justify-center gap-4 mb-4">
               <div className="w-12 h-px bg-pink" />
@@ -89,7 +91,7 @@ const Contact = () => {
             </div>
           )}
           {(contactConfig.headingMain || contactConfig.headingAccent) && (
-            <h2 className="font-display font-black text-5xl md:text-7xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-4xl sm:text-5xl md:text-7xl text-white uppercase tracking-tight">
               {contactConfig.headingMain}<span className="text-pink">{contactConfig.headingAccent}</span>
             </h2>
           )}
@@ -99,7 +101,7 @@ const Contact = () => {
         <div ref={contentRef} className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
           {/* Address */}
           <div className="group">
-            <div className="w-16 h-16 bg-pink/20 flex items-center justify-center mb-6 group-hover:bg-pink transition-colors duration-300">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-pink/20 flex items-center justify-center mb-5 sm:mb-6 group-hover:bg-pink transition-colors duration-300">
               <MapPin className="w-8 h-8 text-pink group-hover:text-black transition-colors duration-300" />
             </div>
             <h3 className="font-display font-bold text-xl text-white mb-4">Location</h3>
@@ -110,7 +112,7 @@ const Contact = () => {
 
           {/* Phone */}
           <div className="group">
-            <div className="w-16 h-16 bg-pink/20 flex items-center justify-center mb-6 group-hover:bg-pink transition-colors duration-300">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-pink/20 flex items-center justify-center mb-5 sm:mb-6 group-hover:bg-pink transition-colors duration-300">
               <Phone className="w-8 h-8 text-pink group-hover:text-black transition-colors duration-300" />
             </div>
             <h3 className="font-display font-bold text-xl text-white mb-4">Phone</h3>
@@ -125,7 +127,7 @@ const Contact = () => {
 
           {/* Email */}
           <div className="group">
-            <div className="w-16 h-16 bg-pink/20 flex items-center justify-center mb-6 group-hover:bg-pink transition-colors duration-300">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-pink/20 flex items-center justify-center mb-5 sm:mb-6 group-hover:bg-pink transition-colors duration-300">
               <Mail className="w-8 h-8 text-pink group-hover:text-black transition-colors duration-300" />
             </div>
             <h3 className="font-display font-bold text-xl text-white mb-4">Email</h3>
@@ -140,7 +142,7 @@ const Contact = () => {
 
           {/* Hours */}
           <div className="group">
-            <div className="w-16 h-16 bg-pink/20 flex items-center justify-center mb-6 group-hover:bg-pink transition-colors duration-300">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 bg-pink/20 flex items-center justify-center mb-5 sm:mb-6 group-hover:bg-pink transition-colors duration-300">
               <Clock className="w-8 h-8 text-pink group-hover:text-black transition-colors duration-300" />
             </div>
             <h3 className="font-display font-bold text-xl text-white mb-4">Hours</h3>
@@ -154,11 +156,11 @@ const Contact = () => {
 
         {/* Social links */}
         {contactConfig.socialLinks.length > 0 && (
-          <div className="mt-16 text-center">
+          <div className="mt-14 sm:mt-16 text-center">
             <h3 className="font-display font-bold text-lg text-white/40 uppercase tracking-wider mb-8">
               Follow Us
             </h3>
-            <div className="flex justify-center gap-6">
+            <div className="flex justify-center gap-4 sm:gap-6">
               {contactConfig.socialLinks.map((link, index) => {
                 const Icon = getSocialIcon(link.platform);
                 return (
@@ -167,7 +169,7 @@ const Contact = () => {
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-14 h-14 border border-white/20 flex items-center justify-center text-white/60 hover:border-pink hover:text-pink hover:bg-pink/10 transition-all duration-300"
+                    className="w-12 h-12 sm:w-14 sm:h-14 border border-white/20 flex items-center justify-center text-white/60 hover:border-pink hover:text-pink hover:bg-pink/10 transition-all duration-300"
                     data-cursor-hover
                     aria-label={link.label}
                   >

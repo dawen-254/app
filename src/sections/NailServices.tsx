@@ -17,6 +17,7 @@ const NailServices = () => {
     const section = sectionRef.current;
     const grid = gridRef.current;
     if (!section || !grid) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const cards = grid.querySelectorAll('.nail-card');
 
@@ -31,14 +32,14 @@ const NailServices = () => {
 
     lineTl.fromTo(
       '.grid-line-h',
-      { scaleX: 0 },
-      { scaleX: 1, duration: 1, stagger: 0.1, ease: 'expo.out' }
+      { scaleX: prefersReducedMotion ? 1 : 0 },
+      { scaleX: 1, duration: prefersReducedMotion ? 0.4 : 1, stagger: 0.1, ease: 'expo.out' }
     );
 
     lineTl.fromTo(
       '.grid-line-v',
-      { scaleY: 0 },
-      { scaleY: 1, duration: 1, stagger: 0.1, ease: 'expo.out' },
+      { scaleY: prefersReducedMotion ? 1 : 0 },
+      { scaleY: 1, duration: prefersReducedMotion ? 0.4 : 1, stagger: 0.1, ease: 'expo.out' },
       0
     );
 
@@ -58,13 +59,13 @@ const NailServices = () => {
     cardsTl.fromTo(
       cards,
       {
-        rotateY: 90,
+        rotateY: prefersReducedMotion ? 0 : 90,
         opacity: 0,
       },
       {
         rotateY: 0,
         opacity: 1,
-        duration: 0.8,
+        duration: prefersReducedMotion ? 0.45 : 0.8,
         stagger: 0.1,
         ease: 'expo.out',
       }
@@ -75,6 +76,8 @@ const NailServices = () => {
     }
 
     return () => {
+      lineTl.kill();
+      cardsTl.kill();
       triggersRef.current.forEach(trigger => trigger.kill());
       triggersRef.current = [];
     };
@@ -82,16 +85,19 @@ const NailServices = () => {
 
   const handleCardClick = (e: React.MouseEvent, color: string, index: number) => {
     setActiveIndex(index);
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
     // Create particles
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = e.clientX || rect.left + rect.width / 2;
+    const y = e.clientY || rect.top + rect.height / 2;
 
-    const newParticles = Array.from({ length: 12 }, () => ({
+    const particleCount = isTouchDevice ? 6 : 12;
+    const spread = isTouchDevice ? 70 : 100;
+    const newParticles = Array.from({ length: particleCount }, () => ({
       id: particleIdRef.current++,
-      x: x + (Math.random() - 0.5) * 100,
-      y: y + (Math.random() - 0.5) * 100,
+      x: x + (Math.random() - 0.5) * spread,
+      y: y + (Math.random() - 0.5) * spread,
       color,
     }));
 
@@ -103,7 +109,14 @@ const NailServices = () => {
     }, 1000);
 
     // Scroll to booking section
-    document.getElementById('booking')?.scrollIntoView({ behavior: 'smooth' });
+    window.dispatchEvent(
+      new CustomEvent('app:scroll-to', {
+        detail: {
+          target: '#booking',
+          offset: window.innerWidth < 768 ? -6 : -10,
+        },
+      })
+    );
   };
 
   if (nailServicesConfig.services.length === 0) return null;
@@ -112,7 +125,7 @@ const NailServices = () => {
     <section
       ref={sectionRef}
       id="nails"
-      className="relative min-h-screen w-full bg-black py-24 overflow-hidden"
+      className="relative min-h-screen w-full bg-black py-20 sm:py-24 overflow-hidden"
     >
       {/* Grid lines */}
       <div className="absolute inset-0 pointer-events-none">
@@ -136,7 +149,7 @@ const NailServices = () => {
 
       <div className="relative z-10 w-full px-6 lg:px-12">
         {/* Section header */}
-        <div className="mb-16 text-center">
+        <div className="mb-12 md:mb-16 text-center">
           {nailServicesConfig.sectionLabel && (
             <div className="flex items-center justify-center gap-4 mb-4">
               <div className="w-12 h-px bg-pink" />
@@ -147,7 +160,7 @@ const NailServices = () => {
             </div>
           )}
           {(nailServicesConfig.headingMain || nailServicesConfig.headingAccent) && (
-            <h2 className="font-display font-black text-5xl md:text-7xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-4xl sm:text-5xl md:text-7xl text-white uppercase tracking-tight">
               {nailServicesConfig.headingMain}<span className="text-pink">{nailServicesConfig.headingAccent}</span>
             </h2>
           )}
@@ -156,12 +169,12 @@ const NailServices = () => {
         {/* Nail services grid */}
         <div
           ref={gridRef}
-          className="grid grid-cols-2 md:grid-cols-3 gap-4"
+          className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4"
         >
           {nailServicesConfig.services.map((service, index) => (
             <div
               key={service.name}
-              className={`nail-card relative bg-black preserve-3d cursor-pointer group overflow-hidden rounded-lg ${
+              className={`nail-card relative bg-black preserve-3d cursor-pointer group overflow-hidden rounded-lg active:scale-[0.99] transition-transform ${
                 activeIndex === index ? 'ring-2 ring-pink z-10' : ''
               }`}
               onClick={(e) => handleCardClick(e, service.color, index)}
@@ -177,18 +190,19 @@ const NailServices = () => {
               </div>
 
               {/* Overlay info */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end p-4 text-center pb-8">
-                <span className="font-display font-black text-2xl text-white mb-1">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-end p-3 sm:p-4 text-center pb-4 sm:pb-8">
+                <span className="font-display font-black text-lg sm:text-2xl text-white mb-1">
                   {service.nameSecondary}
                 </span>
-                <span className="font-body text-pink text-sm mb-2">
+                <span className="font-body text-pink text-xs sm:text-sm mb-2">
                   {service.name}
                 </span>
-                <span className="font-body text-white/60 text-xs">
+                <span className="font-body text-white/60 text-[11px] sm:text-xs">
                   {service.description}
                 </span>
-                <div className="mt-4 px-4 py-2 bg-pink text-black text-xs font-display font-bold uppercase tracking-wider">
-                  Click to Book
+                <div className="mt-3 sm:mt-4 px-4 py-2 bg-pink text-black text-[11px] sm:text-xs font-display font-bold uppercase tracking-wider">
+                  <span className="md:hidden">Tap to Book</span>
+                  <span className="hidden md:inline">Click to Book</span>
                 </div>
               </div>
 
@@ -220,7 +234,7 @@ const NailServices = () => {
         {/* Bottom text */}
         {nailServicesConfig.bottomText && (
           <div className="mt-16 text-center">
-            <p className="font-body text-white/40 text-sm uppercase tracking-wider">
+            <p className="font-body text-white/45 text-xs sm:text-sm uppercase tracking-wider">
               {nailServicesConfig.bottomText}
             </p>
           </div>

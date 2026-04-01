@@ -36,6 +36,7 @@ const Booking = () => {
     const section = sectionRef.current;
     const form = formRef.current;
     if (!section || !form) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // Form entrance animation
     const formTl = gsap.timeline({
@@ -49,13 +50,13 @@ const Booking = () => {
     formTl.fromTo(
       form.children,
       {
-        y: 60,
+        y: prefersReducedMotion ? 0 : 60,
         opacity: 0,
       },
       {
         y: 0,
         opacity: 1,
-        duration: 0.8,
+        duration: prefersReducedMotion ? 0.45 : 0.8,
         stagger: 0.08,
         ease: 'expo.out',
       }
@@ -66,6 +67,7 @@ const Booking = () => {
     }
 
     return () => {
+      formTl.kill();
       triggersRef.current.forEach(trigger => trigger.kill());
       triggersRef.current = [];
     };
@@ -77,7 +79,14 @@ const Booking = () => {
     setIsSubmitted(true);
     
     // Store booking in localStorage for admin access
-    const bookings = JSON.parse(localStorage.getItem('luxe_bookings') || '[]');
+    let bookings: Array<BookingForm & { id: number; status: string; createdAt: string }> = [];
+    try {
+      const parsedBookings: unknown = JSON.parse(localStorage.getItem('luxe_bookings') || '[]');
+      bookings = Array.isArray(parsedBookings) ? parsedBookings as Array<BookingForm & { id: number; status: string; createdAt: string }> : [];
+    } catch {
+      bookings = [];
+    }
+
     bookings.push({
       ...form,
       id: Date.now(),
@@ -104,7 +113,7 @@ const Booking = () => {
     <section
       ref={sectionRef}
       id="booking"
-      className="relative min-h-screen w-full bg-black py-24 overflow-hidden"
+      className="relative min-h-screen w-full bg-black py-20 sm:py-24 overflow-hidden"
     >
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-5">
@@ -114,7 +123,7 @@ const Booking = () => {
 
       <div className="relative z-10 w-full px-6 lg:px-12">
         {/* Section header */}
-        <div className="mb-16 text-center">
+        <div className="mb-12 md:mb-16 text-center">
           {bookingConfig.sectionLabel && (
             <div className="flex items-center justify-center gap-4 mb-4">
               <div className="w-12 h-px bg-pink" />
@@ -125,12 +134,12 @@ const Booking = () => {
             </div>
           )}
           {(bookingConfig.headingMain || bookingConfig.headingAccent) && (
-            <h2 className="font-display font-black text-5xl md:text-7xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-4xl sm:text-5xl md:text-7xl text-white uppercase tracking-tight">
               {bookingConfig.headingMain}<span className="text-pink">{bookingConfig.headingAccent}</span>
             </h2>
           )}
           {bookingConfig.description && (
-            <p className="mt-6 font-body text-white/60 text-lg max-w-2xl mx-auto">
+            <p className="mt-6 font-body text-white/60 text-base sm:text-lg max-w-2xl mx-auto px-2">
               {bookingConfig.description}
             </p>
           )}
@@ -174,7 +183,7 @@ const Booking = () => {
             className="max-w-4xl mx-auto"
           >
             {/* Service category filter */}
-            <div className="flex justify-center gap-4 mb-8">
+            <div className="flex justify-start md:justify-center gap-3 sm:gap-4 mb-8 overflow-x-auto pb-2">
               {(['all', 'hair', 'nails'] as const).map((category) => (
                 <button
                   key={category}
@@ -183,7 +192,7 @@ const Booking = () => {
                     setSelectedCategory(category);
                     setForm(prev => ({ ...prev, service: '' }));
                   }}
-                  className={`px-6 py-3 font-display font-bold text-sm uppercase tracking-wider transition-all duration-300 flex items-center gap-2 ${
+                  className={`px-5 sm:px-6 py-3 font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 flex items-center gap-2 whitespace-nowrap ${
                     selectedCategory === category
                       ? 'bg-pink text-black'
                       : 'border border-white/20 text-white/60 hover:border-pink hover:text-pink'
@@ -206,7 +215,8 @@ const Booking = () => {
                   onChange={handleChange}
                   placeholder="Your Name"
                   required
-                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300"
+                  autoComplete="name"
+                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white text-sm sm:text-base placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300"
                 />
               </div>
 
@@ -220,7 +230,8 @@ const Booking = () => {
                   onChange={handleChange}
                   placeholder="Email Address"
                   required
-                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300"
+                  autoComplete="email"
+                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white text-sm sm:text-base placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300"
                 />
               </div>
 
@@ -234,7 +245,9 @@ const Booking = () => {
                   onChange={handleChange}
                   placeholder="Phone Number"
                   required
-                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white text-sm sm:text-base placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300"
                 />
               </div>
 
@@ -246,7 +259,7 @@ const Booking = () => {
                   value={form.service}
                   onChange={handleChange}
                   required
-                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white focus:border-pink focus:outline-none transition-colors duration-300 appearance-none cursor-pointer"
+                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white text-sm sm:text-base focus:border-pink focus:outline-none transition-colors duration-300 appearance-none cursor-pointer"
                 >
                   <option value="" className="bg-black">Select Service</option>
                   {filteredServices.map((service) => (
@@ -267,7 +280,7 @@ const Booking = () => {
                   onChange={handleChange}
                   required
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300"
+                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white text-sm sm:text-base placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300"
                 />
               </div>
 
@@ -279,7 +292,7 @@ const Booking = () => {
                   value={form.time}
                   onChange={handleChange}
                   required
-                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white focus:border-pink focus:outline-none transition-colors duration-300 appearance-none cursor-pointer"
+                  className="w-full bg-white/5 border border-white/10 px-12 py-4 text-white text-sm sm:text-base focus:border-pink focus:outline-none transition-colors duration-300 appearance-none cursor-pointer"
                 >
                   <option value="" className="bg-black">Select Time</option>
                   {bookingConfig.timeSlots.map((time) => (
@@ -299,7 +312,7 @@ const Booking = () => {
                 onChange={handleChange}
                 placeholder="Additional Notes (optional)"
                 rows={4}
-                className="w-full bg-white/5 border border-white/10 px-6 py-4 text-white placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300 resize-none"
+                className="w-full bg-white/5 border border-white/10 px-6 py-4 text-white text-sm sm:text-base placeholder:text-white/40 focus:border-pink focus:outline-none transition-colors duration-300 resize-none"
               />
             </div>
 
@@ -307,7 +320,7 @@ const Booking = () => {
             <div className="mt-8 text-center">
               <button
                 type="submit"
-                className="group inline-flex items-center gap-4 px-12 py-4 bg-pink text-black font-display font-bold text-sm uppercase tracking-wider hover:bg-white transition-all duration-300"
+                className="group inline-flex items-center justify-center gap-4 px-12 py-4 w-full sm:w-auto bg-pink text-black font-display font-bold text-sm uppercase tracking-wider hover:bg-white transition-all duration-300"
                 data-cursor-hover
               >
                 <Calendar className="w-5 h-5" />

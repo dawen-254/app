@@ -26,6 +26,8 @@
     --input: 0 0% 20%;
     --ring: 326 100% 73%;
     --radius: 0rem;
+    --nav-height: 5.5rem;
+    --nav-height-mobile: 4.75rem;
     
     --pink: #ff73c3;
     --black: #000000;
@@ -40,7 +42,8 @@
   }
   
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
+    scroll-padding-top: var(--nav-height);
   }
   
   body {
@@ -132,6 +135,36 @@
   
   .mask-grid {
     mask-image: linear-gradient(to bottom, black 0%, black 100%);
+  }
+}
+
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: var(--nav-height-mobile);
+  }
+
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .grain-overlay {
+    opacity: 0.02;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

@@ -10,6 +10,8 @@ const Services = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const touchStartXRef = useRef<number | null>(null);
+  const touchEndXRef = useRef<number | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const triggersRef = useRef<ScrollTrigger[]>([]);
 
@@ -18,6 +20,8 @@ const Services = () => {
     const image = imageRef.current;
     const content = contentRef.current;
     if (!section || !image || !content) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
     // Image entrance animation
     const imageTl = gsap.timeline({
@@ -32,15 +36,15 @@ const Services = () => {
     imageTl.fromTo(
       image,
       {
-        rotateY: 90,
+        rotateY: prefersReducedMotion ? 0 : 90,
         opacity: 0,
-        scale: 0.8,
+        scale: prefersReducedMotion ? 1 : 0.86,
       },
       {
         rotateY: 0,
         opacity: 1,
         scale: 1,
-        duration: 1.2,
+        duration: prefersReducedMotion ? 0.55 : 1.1,
         ease: 'expo.out',
       }
     );
@@ -61,13 +65,13 @@ const Services = () => {
     contentTl.fromTo(
       content.children,
       {
-        y: 60,
+        y: prefersReducedMotion ? 0 : 60,
         opacity: 0,
       },
       {
         y: 0,
         opacity: 1,
-        duration: 0.8,
+        duration: prefersReducedMotion ? 0.45 : 0.8,
         stagger: 0.1,
         ease: 'expo.out',
       }
@@ -78,13 +82,15 @@ const Services = () => {
     }
 
     // Floating animation for image
-    gsap.to(image, {
-      y: -20,
-      duration: 3,
-      repeat: -1,
-      yoyo: true,
-      ease: 'sine.inOut',
-    });
+    const floatTween = !isTouchDevice && !prefersReducedMotion
+      ? gsap.to(image, {
+          y: -20,
+          duration: 3,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        })
+      : null;
 
     // Mouse parallax effect
     const handleMouseMove = (e: MouseEvent) => {
@@ -114,12 +120,17 @@ const Services = () => {
       });
     };
 
-    section.addEventListener('mousemove', handleMouseMove);
-    section.addEventListener('mouseleave', handleMouseLeave);
+    if (!isTouchDevice && !prefersReducedMotion) {
+      section.addEventListener('mousemove', handleMouseMove);
+      section.addEventListener('mouseleave', handleMouseLeave);
+    }
 
     return () => {
       section.removeEventListener('mousemove', handleMouseMove);
       section.removeEventListener('mouseleave', handleMouseLeave);
+      imageTl.kill();
+      contentTl.kill();
+      floatTween?.kill();
       triggersRef.current.forEach(trigger => trigger.kill());
       triggersRef.current = [];
     };
@@ -138,13 +149,47 @@ const Services = () => {
     );
   };
 
+  const handleImageTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = event.touches[0]?.clientX ?? null;
+    touchEndXRef.current = null;
+  };
+
+  const handleImageTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    touchEndXRef.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const handleImageTouchEnd = () => {
+    if (touchStartXRef.current === null || touchEndXRef.current === null) return;
+
+    const deltaX = touchStartXRef.current - touchEndXRef.current;
+    if (Math.abs(deltaX) < 40) return;
+
+    if (deltaX > 0) {
+      nextImage();
+    } else {
+      prevImage();
+    }
+  };
+
+  const handleBookingClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    window.dispatchEvent(
+      new CustomEvent('app:scroll-to', {
+        detail: {
+          target: '#booking',
+          offset: window.innerWidth < 768 ? -6 : -10,
+        },
+      })
+    );
+  };
+
   if (!servicesConfig.serviceName && !servicesConfig.headingMain) return null;
 
   return (
     <section
       ref={sectionRef}
       id="services"
-      className="relative min-h-screen w-full bg-black py-24 overflow-hidden perspective-1000"
+      className="relative min-h-screen w-full bg-black py-20 sm:py-24 overflow-hidden perspective-1000"
     >
       {/* Background grid lines */}
       <div className="absolute inset-0 opacity-10">
@@ -157,7 +202,7 @@ const Services = () => {
 
       <div className="relative z-10 w-full px-6 lg:px-12">
         {/* Section header */}
-        <div className="mb-16">
+        <div className="mb-12 md:mb-16">
           {servicesConfig.sectionLabel && (
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-px bg-pink" />
@@ -167,7 +212,7 @@ const Services = () => {
             </div>
           )}
           {(servicesConfig.headingMain || servicesConfig.headingAccent) && (
-            <h2 className="font-display font-black text-5xl md:text-7xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-4xl sm:text-5xl md:text-7xl text-white uppercase tracking-tight">
               {servicesConfig.headingMain}<span className="text-pink">{servicesConfig.headingAccent}</span>
             </h2>
           )}
@@ -187,13 +232,16 @@ const Services = () => {
               ref={imageRef}
               className="relative preserve-3d"
               style={{ transformStyle: 'preserve-3d' }}
+              onTouchStart={handleImageTouchStart}
+              onTouchMove={handleImageTouchMove}
+              onTouchEnd={handleImageTouchEnd}
             >
               {servicesConfig.serviceImages.length > 0 && (
                 <div className="relative">
                   <img
                     src={servicesConfig.serviceImages[currentImageIndex]}
                     alt={servicesConfig.serviceImageAlts[currentImageIndex]}
-                    className="w-64 md:w-80 lg:w-96 h-auto max-h-[500px] object-cover rounded-lg drop-shadow-2xl transition-all duration-500"
+                    className="w-56 sm:w-64 md:w-80 lg:w-96 h-auto max-h-[500px] object-cover rounded-lg drop-shadow-2xl transition-all duration-500"
                   />
                   
                   {/* Navigation arrows */}
@@ -201,14 +249,16 @@ const Services = () => {
                     <>
                       <button
                         onClick={prevImage}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-10 h-10 bg-pink text-black flex items-center justify-center hover:bg-white transition-colors duration-300"
+                        aria-label="Previous service image"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 md:-translate-x-4 w-11 h-11 bg-pink text-black flex items-center justify-center hover:bg-white transition-colors duration-300"
                         data-cursor-hover
                       >
                         <ChevronLeft className="w-5 h-5" />
                       </button>
                       <button
                         onClick={nextImage}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-10 h-10 bg-pink text-black flex items-center justify-center hover:bg-white transition-colors duration-300"
+                        aria-label="Next service image"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 md:translate-x-4 w-11 h-11 bg-pink text-black flex items-center justify-center hover:bg-white transition-colors duration-300"
                         data-cursor-hover
                       >
                         <ChevronRight className="w-5 h-5" />
@@ -223,6 +273,7 @@ const Services = () => {
                         <button
                           key={index}
                           onClick={() => setCurrentImageIndex(index)}
+                          aria-label={`View service image ${index + 1}`}
                           className={`w-2 h-2 rounded-full transition-all duration-300 ${
                             index === currentImageIndex ? 'bg-pink w-6' : 'bg-white/30'
                           }`}
@@ -237,7 +288,7 @@ const Services = () => {
 
             {/* Price tag */}
             {servicesConfig.price && (
-              <div className="absolute top-0 right-0 lg:right-12 bg-pink text-black px-6 py-3 font-display font-black text-2xl">
+              <div className="absolute top-0 right-0 lg:right-12 bg-pink text-black px-4 sm:px-6 py-2 sm:py-3 font-display font-black text-xl sm:text-2xl">
                 {servicesConfig.price}
               </div>
             )}
@@ -247,12 +298,12 @@ const Services = () => {
           <div ref={contentRef} className="space-y-8">
             <div>
               {servicesConfig.serviceName && (
-                <h3 className="font-display font-bold text-3xl md:text-4xl text-white mb-4">
+                <h3 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl text-white mb-4">
                   {servicesConfig.serviceName}
                 </h3>
               )}
               {servicesConfig.description && (
-                <p className="font-body text-white/60 text-lg leading-relaxed">
+                <p className="font-body text-white/65 text-base sm:text-lg leading-relaxed">
                   {servicesConfig.description}
                 </p>
               )}
@@ -260,9 +311,9 @@ const Services = () => {
 
             {/* Features */}
             {servicesConfig.features.length > 0 && (
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {servicesConfig.features.map((feature, index) => (
-                  <div key={index} className="border border-white/10 p-6 hover:border-pink transition-colors duration-300">
+                  <div key={index} className="border border-white/10 p-5 sm:p-6 hover:border-pink transition-colors duration-300">
                     <div className="text-pink font-display font-black text-3xl mb-2">{feature.value}</div>
                     <div className="font-body text-white/40 text-sm uppercase tracking-wider">
                       {feature.label}
@@ -276,7 +327,8 @@ const Services = () => {
             {servicesConfig.ctaText && (
               <a
                 href="#booking"
-                className="group inline-flex items-center gap-4 px-8 py-4 bg-pink text-black font-display font-bold text-sm uppercase tracking-wider hover:bg-white transition-all duration-300"
+                onClick={handleBookingClick}
+                className="group inline-flex items-center justify-center gap-4 px-8 py-4 w-full sm:w-auto bg-pink text-black font-display font-bold text-sm uppercase tracking-wider hover:bg-white transition-all duration-300"
                 data-cursor-hover
               >
                 <Scissors className="w-5 h-5" />

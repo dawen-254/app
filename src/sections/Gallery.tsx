@@ -17,6 +17,7 @@ const Gallery = () => {
     const section = sectionRef.current;
     const grid = gridRef.current;
     if (!section || !grid) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const items = grid.querySelectorAll('.gallery-item');
 
@@ -32,15 +33,15 @@ const Gallery = () => {
     itemsTl.fromTo(
       items,
       {
-        y: 80,
+        y: prefersReducedMotion ? 0 : 80,
         opacity: 0,
-        scale: 0.9,
+        scale: prefersReducedMotion ? 1 : 0.9,
       },
       {
         y: 0,
         opacity: 1,
         scale: 1,
-        duration: 0.8,
+        duration: prefersReducedMotion ? 0.45 : 0.8,
         stagger: 0.08,
         ease: 'expo.out',
       }
@@ -51,6 +52,7 @@ const Gallery = () => {
     }
 
     return () => {
+      itemsTl.kill();
       triggersRef.current.forEach(trigger => trigger.kill());
       triggersRef.current = [];
     };
@@ -66,11 +68,11 @@ const Gallery = () => {
     <section
       ref={sectionRef}
       id="gallery"
-      className="relative min-h-screen w-full bg-black py-24 overflow-hidden"
+      className="relative min-h-screen w-full bg-black py-20 sm:py-24 overflow-hidden"
     >
       <div className="relative z-10 w-full px-6 lg:px-12">
         {/* Section header */}
-        <div className="mb-12 text-center">
+        <div className="mb-10 sm:mb-12 text-center">
           {galleryConfig.sectionLabel && (
             <div className="flex items-center justify-center gap-4 mb-4">
               <div className="w-12 h-px bg-pink" />
@@ -81,19 +83,19 @@ const Gallery = () => {
             </div>
           )}
           {(galleryConfig.headingMain || galleryConfig.headingAccent) && (
-            <h2 className="font-display font-black text-5xl md:text-7xl text-white uppercase tracking-tight">
+            <h2 className="font-display font-black text-4xl sm:text-5xl md:text-7xl text-white uppercase tracking-tight">
               {galleryConfig.headingMain}<span className="text-pink">{galleryConfig.headingAccent}</span>
             </h2>
           )}
         </div>
 
         {/* Filter buttons */}
-        <div className="flex justify-center gap-4 mb-12">
+        <div className="flex justify-start md:justify-center gap-3 mb-10 sm:mb-12 overflow-x-auto pb-2">
           {(['all', 'hair', 'nails'] as const).map((category) => (
             <button
               key={category}
               onClick={() => setFilter(category)}
-              className={`px-6 py-3 font-display font-bold text-sm uppercase tracking-wider transition-all duration-300 ${
+              className={`px-5 sm:px-6 py-3 font-display font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${
                 filter === category
                   ? 'bg-pink text-black'
                   : 'border border-white/20 text-white/60 hover:border-pink hover:text-pink'
@@ -108,7 +110,7 @@ const Gallery = () => {
         {/* Gallery grid */}
         <div
           ref={gridRef}
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4"
         >
           {filteredItems.map((item, index) => (
             <div
@@ -125,7 +127,7 @@ const Gallery = () => {
                 <img
                   src={item.image}
                   alt={item.alt}
-                  className="w-full h-full object-cover transition-transform duration-700 ease-custom-expo group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-custom-expo md:group-hover:scale-110"
                 />
                 
                 {/* Overlay */}
@@ -151,13 +153,14 @@ const Gallery = () => {
       {/* Lightbox */}
       {selectedImage && (
         <div 
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-6"
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 sm:p-6"
           onClick={() => setSelectedImage(null)}
         >
           <button
             onClick={() => setSelectedImage(null)}
-            className="absolute top-6 right-6 w-12 h-12 bg-pink text-black flex items-center justify-center hover:bg-white transition-colors duration-300"
+            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-12 h-12 bg-pink text-black flex items-center justify-center hover:bg-white transition-colors duration-300"
             data-cursor-hover
+            aria-label="Close gallery image"
           >
             <X className="w-6 h-6" />
           </button>

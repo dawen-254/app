@@ -18,32 +18,34 @@ const Hero = () => {
     const grid = gridRef.current;
     const title = titleRef.current;
     if (!section || !grid || !title) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
     // Set loaded state for initial animations
-    const loadTimer = setTimeout(() => setIsLoaded(true), 100);
+    const loadTimer = setTimeout(() => setIsLoaded(true), 80);
 
     // Get all grid cells
     const cells = grid.querySelectorAll('.grid-cell');
     const titleBlocks = title.querySelectorAll('.title-block');
 
     // Initial entrance animation
-    const tl = gsap.timeline({ delay: 0.3 });
+    const tl = gsap.timeline({ delay: isTouchDevice ? 0.12 : 0.25 });
 
     // Grid cells flip in with stagger
     tl.fromTo(
       cells,
       {
-        rotateX: 90,
-        y: -100,
+        rotateX: prefersReducedMotion ? 0 : 90,
+        y: prefersReducedMotion ? 0 : -80,
         opacity: 0,
       },
       {
         rotateX: 0,
         y: 0,
         opacity: 1,
-        duration: 1.2,
+        duration: prefersReducedMotion ? 0.45 : 1,
         stagger: {
-          each: 0.05,
+          each: isTouchDevice ? 0.03 : 0.05,
           from: 'random',
         },
         ease: 'expo.out',
@@ -54,15 +56,15 @@ const Hero = () => {
     tl.fromTo(
       titleBlocks,
       {
-        scale: 0,
-        rotate: 180,
+        scale: prefersReducedMotion ? 1 : 0,
+        rotate: prefersReducedMotion ? 0 : 180,
         opacity: 0,
       },
       {
         scale: 1,
         rotate: 0,
         opacity: 1,
-        duration: 0.6,
+        duration: prefersReducedMotion ? 0.35 : 0.55,
         stagger: 0.1,
         ease: 'back.out(1.7)',
       },
@@ -70,35 +72,40 @@ const Hero = () => {
     );
 
     // Scroll-based parallax
-    const scrollTl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: 1,
-      },
-    });
+    let scrollTl: gsap.core.Timeline | null = null;
+    if (!isTouchDevice && !prefersReducedMotion) {
+      scrollTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 1,
+        },
+      });
 
-    scrollTl.to(grid, {
-      y: 150,
-      ease: 'none',
-    });
-
-    scrollTl.to(
-      title,
-      {
-        x: -200,
+      scrollTl.to(grid, {
+        y: 120,
         ease: 'none',
-      },
-      0
-    );
+      });
 
-    if (scrollTl.scrollTrigger) {
-      triggersRef.current.push(scrollTl.scrollTrigger);
+      scrollTl.to(
+        title,
+        {
+          x: -180,
+          ease: 'none',
+        },
+        0
+      );
+
+      if (scrollTl.scrollTrigger) {
+        triggersRef.current.push(scrollTl.scrollTrigger);
+      }
     }
 
     return () => {
       clearTimeout(loadTimer);
+      tl.kill();
+      scrollTl?.kill();
       triggersRef.current.forEach(trigger => trigger.kill());
       triggersRef.current = [];
     };
@@ -106,8 +113,28 @@ const Hero = () => {
 
   if (!heroConfig.titleLine1 && !heroConfig.titleLine2) return null;
 
-  const rows = heroConfig.gridRows || 6;
-  const cols = heroConfig.gridCols || 8;
+  const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 768;
+  const rows = isMobileViewport
+    ? Math.max(4, Math.round((heroConfig.gridRows || 6) * 0.75))
+    : heroConfig.gridRows || 6;
+  const cols = isMobileViewport
+    ? Math.max(6, Math.round((heroConfig.gridCols || 8) * 0.75))
+    : heroConfig.gridCols || 8;
+
+  const handleCtaClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    const href = heroConfig.ctaHref || '#booking';
+    if (!href.startsWith('#')) return;
+
+    event.preventDefault();
+    window.dispatchEvent(
+      new CustomEvent('app:scroll-to', {
+        detail: {
+          target: href,
+          offset: window.innerWidth < 768 ? -6 : -10,
+        },
+      })
+    );
+  };
 
   // Generate grid cells
   const generateGridCells = () => {
@@ -121,7 +148,7 @@ const Hero = () => {
         cells.push(
           <div
             key={cellIndex}
-            className={`grid-cell absolute preserve-3d backface-hidden transition-all duration-300 hover:scale-105 hover:z-10 ${
+            className={`grid-cell absolute preserve-3d backface-hidden transition-all duration-300 md:hover:scale-105 md:hover:z-10 ${
               isPink ? 'bg-pink' : ''
             }`}
             style={{
@@ -145,7 +172,7 @@ const Hero = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen w-full bg-black overflow-hidden perspective-1000"
+      className="relative min-h-[100svh] w-full bg-black overflow-hidden perspective-1000"
     >
       {/* Grid container */}
       <div
@@ -161,12 +188,12 @@ const Hero = () => {
         ref={titleRef}
         className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
       >
-        <div className="relative w-full max-w-6xl px-6">
+        <div className="relative w-full max-w-6xl px-4 sm:px-6">
           {/* Title Line 1 */}
           {heroConfig.titleLine1 && (
-            <div className="flex justify-start mb-4">
-              <div className="title-block bg-pink px-8 py-4 pointer-events-auto hover:scale-110 transition-transform duration-300">
-                <span className="font-display font-black text-6xl md:text-8xl lg:text-9xl text-black tracking-tighter">
+            <div className="flex justify-start mb-3 sm:mb-4">
+              <div className="title-block bg-pink px-4 sm:px-8 py-3 sm:py-4 pointer-events-auto md:hover:scale-110 transition-transform duration-300">
+                <span className="font-display font-black text-[2.8rem] sm:text-6xl md:text-8xl lg:text-9xl text-black tracking-tighter leading-none">
                   {heroConfig.titleLine1}
                 </span>
               </div>
@@ -176,8 +203,8 @@ const Hero = () => {
           {/* Title Line 2 */}
           {heroConfig.titleLine2 && (
             <div className="flex justify-end">
-              <div className="title-block bg-pink px-8 py-4 pointer-events-auto hover:scale-110 transition-transform duration-300">
-                <span className="font-display font-black text-6xl md:text-8xl lg:text-9xl text-black tracking-tighter">
+              <div className="title-block bg-pink px-4 sm:px-8 py-3 sm:py-4 pointer-events-auto md:hover:scale-110 transition-transform duration-300">
+                <span className="font-display font-black text-[2.8rem] sm:text-6xl md:text-8xl lg:text-9xl text-black tracking-tighter leading-none">
                   {heroConfig.titleLine2}
                 </span>
               </div>
@@ -188,8 +215,8 @@ const Hero = () => {
 
       {/* Subtitle */}
       {heroConfig.subtitle && (
-        <div className="absolute bottom-32 left-0 right-0 text-center z-20">
-          <p className="font-body text-white/60 text-sm md:text-base uppercase tracking-[0.3em]">
+        <div className="absolute bottom-24 md:bottom-32 left-0 right-0 text-center z-20 px-6">
+          <p className="font-body text-white/70 text-[10px] sm:text-xs md:text-base uppercase tracking-[0.22em] md:tracking-[0.3em] max-w-xl mx-auto leading-relaxed">
             {heroConfig.subtitle}
           </p>
         </div>
@@ -197,10 +224,11 @@ const Hero = () => {
 
       {/* CTA Button */}
       {heroConfig.ctaText && (
-        <div className="absolute bottom-16 left-0 right-0 flex justify-center z-20">
+        <div className="absolute bottom-8 md:bottom-16 left-0 right-0 flex justify-center z-20 px-4">
           <a
             href={heroConfig.ctaHref || '#products'}
-            className="group flex items-center gap-3 px-8 py-4 border-2 border-pink text-pink font-display font-bold text-sm uppercase tracking-wider hover:bg-pink hover:text-black transition-all duration-300"
+            onClick={handleCtaClick}
+            className="group flex items-center gap-3 px-6 sm:px-8 py-3 sm:py-4 border-2 border-pink text-pink font-display font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-pink hover:text-black transition-all duration-300"
             data-cursor-hover
           >
             {heroConfig.ctaText}
@@ -210,8 +238,8 @@ const Hero = () => {
       )}
 
       {/* Corner decorations */}
-      <div className="absolute top-24 left-6 w-16 h-16 border-l-2 border-t-2 border-pink/30 z-20" />
-      <div className="absolute bottom-24 right-6 w-16 h-16 border-r-2 border-b-2 border-pink/30 z-20" />
+      <div className="hidden md:block absolute top-24 left-6 w-16 h-16 border-l-2 border-t-2 border-pink/30 z-20" />
+      <div className="hidden md:block absolute bottom-24 right-6 w-16 h-16 border-r-2 border-b-2 border-pink/30 z-20" />
 
       {/* Loading overlay */}
       <div

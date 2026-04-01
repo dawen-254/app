@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import Lenis from '@studio-freight/lenis';
 import Hero from './sections/Hero';
 import Services from './sections/Services';
 import NailServices from './sections/NailServices';
@@ -17,53 +18,81 @@ gsap.registerPlugin(ScrollTrigger);
 function App() {
   const mainRef = useRef<HTMLDivElement>(null);
   const triggersRef = useRef<ScrollTrigger[]>([]);
-  const lastScrollYRef = useRef(0);
 
   useEffect(() => {
-    // Velocity-based skew effect
+    const mainElement = mainRef.current;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const enableSkewEffect = !prefersReducedMotion && !isTouchDevice;
+
+    const lenis = new Lenis({
+      duration: isTouchDevice ? 0.9 : 1.15,
+      smoothWheel: true,
+      syncTouch: isTouchDevice,
+      touchMultiplier: 1,
+    });
+
     let currentSkew = 0;
     let targetSkew = 0;
     let animationFrameId = 0;
-    
-    const updateSkew = () => {
-      currentSkew += (targetSkew - currentSkew) * 0.1;
-      if (mainRef.current) {
-        mainRef.current.style.transform = `skewY(${currentSkew}deg)`;
+
+    lenis.on('scroll', (event: { velocity: number }) => {
+      ScrollTrigger.update();
+      if (enableSkewEffect) {
+        targetSkew = gsap.utils.clamp(-2.5, 2.5, event.velocity * 0.65);
       }
-      animationFrameId = window.requestAnimationFrame(updateSkew);
+    });
+
+    const handleAppScrollTo = (event: Event) => {
+      const customEvent = event as CustomEvent<{ target: string; offset?: number }>;
+      const target = customEvent.detail?.target;
+      if (!target) return;
+
+      lenis.scrollTo(target, {
+        offset: customEvent.detail?.offset ?? 0,
+        duration: isTouchDevice ? 1 : 1.2,
+      });
     };
-    
-    const handleScroll = () => {
-      const scrollSpeed = Math.abs(window.scrollY - lastScrollYRef.current);
-      targetSkew = Math.min(scrollSpeed * 0.02, 3);
-      lastScrollYRef.current = window.scrollY;
+
+    window.addEventListener('app:scroll-to', handleAppScrollTo);
+
+    const animate = (time: number) => {
+      lenis.raf(time);
+
+      if (enableSkewEffect && mainElement) {
+        currentSkew += (targetSkew - currentSkew) * 0.08;
+        targetSkew *= 0.92;
+
+        if (Math.abs(targetSkew) < 0.01 && Math.abs(currentSkew) < 0.01) {
+          targetSkew = 0;
+          currentSkew = 0;
+        }
+
+        mainElement.style.transform = `skewY(${currentSkew.toFixed(3)}deg)`;
+      }
+
+      animationFrameId = window.requestAnimationFrame(animate);
     };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    animationFrameId = window.requestAnimationFrame(updateSkew);
-    
-    // Reset skew when scroll stops
-    let scrollTimeout: ReturnType<typeof setTimeout>;
-    const resetSkew = () => {
-      clearTimeout(scrollTimeout);
-      scrollTimeout = setTimeout(() => {
-        targetSkew = 0;
-      }, 100);
-    };
-    window.addEventListener('scroll', resetSkew, { passive: true });
+
+    animationFrameId = window.requestAnimationFrame(animate);
+    ScrollTrigger.refresh();
     
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('scroll', resetSkew);
+      window.removeEventListener('app:scroll-to', handleAppScrollTo);
       window.cancelAnimationFrame(animationFrameId);
-      clearTimeout(scrollTimeout);
+      lenis.destroy();
+
+      if (mainElement) {
+        mainElement.style.transform = 'none';
+      }
+
       triggersRef.current.forEach(trigger => trigger.kill());
       triggersRef.current = [];
     };
   }, []);
 
   return (
-    <div className="relative bg-black min-h-screen overflow-x-hidden">
+    <div id="top" className="relative bg-black min-h-screen overflow-x-hidden">
       {/* Grain overlay */}
       <div className="grain-overlay" />
       

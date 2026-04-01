@@ -19,25 +19,30 @@ const About = () => {
     const text = textRef.current;
     const diagonal = diagonalRef.current;
     if (!section || !image || !text || !diagonal) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
     // Diagonal line rotation on scroll
-    const diagonalTl = gsap.timeline({
-      scrollTrigger: {
-        trigger: section,
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: 1,
-      },
-    });
+    let diagonalTl: gsap.core.Timeline | null = null;
+    if (!isTouchDevice && !prefersReducedMotion) {
+      diagonalTl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top bottom',
+          end: 'bottom top',
+          scrub: 1,
+        },
+      });
 
-    diagonalTl.fromTo(
-      diagonal,
-      { rotate: 15 },
-      { rotate: -15, ease: 'none' }
-    );
+      diagonalTl.fromTo(
+        diagonal,
+        { rotate: 15 },
+        { rotate: -15, ease: 'none' }
+      );
 
-    if (diagonalTl.scrollTrigger) {
-      triggersRef.current.push(diagonalTl.scrollTrigger);
+      if (diagonalTl.scrollTrigger) {
+        triggersRef.current.push(diagonalTl.scrollTrigger);
+      }
     }
 
     // Image depth zoom effect
@@ -46,14 +51,14 @@ const About = () => {
         trigger: section,
         start: 'top 60%',
         end: 'center center',
-        scrub: 1,
+        scrub: prefersReducedMotion ? false : 1,
       },
     });
 
     imageTl.fromTo(
       image,
       {
-        scale: 1.2,
+        scale: prefersReducedMotion ? 1 : 1.2,
         opacity: 0.5,
       },
       {
@@ -79,13 +84,13 @@ const About = () => {
     textTl.fromTo(
       text.children,
       {
-        y: 80,
+        y: prefersReducedMotion ? 0 : 80,
         opacity: 0,
       },
       {
         y: 0,
         opacity: 1,
-        duration: 1,
+        duration: prefersReducedMotion ? 0.45 : 1,
         stagger: 0.15,
         ease: 'expo.out',
       }
@@ -97,8 +102,9 @@ const About = () => {
 
     // Glitch effect on title
     const title = text.querySelector('.glitch-title');
-    if (title) {
-      const glitchInterval = setInterval(() => {
+    let glitchInterval: ReturnType<typeof setInterval> | null = null;
+    if (title && !isTouchDevice && !prefersReducedMotion) {
+      glitchInterval = setInterval(() => {
         gsap.to(title, {
           x: 2,
           duration: 0.05,
@@ -109,15 +115,16 @@ const About = () => {
           },
         });
       }, 5000);
-
-      return () => {
-        clearInterval(glitchInterval);
-        triggersRef.current.forEach(trigger => trigger.kill());
-        triggersRef.current = [];
-      };
     }
 
     return () => {
+      if (glitchInterval) {
+        clearInterval(glitchInterval);
+      }
+
+      diagonalTl?.kill();
+      imageTl.kill();
+      textTl.kill();
       triggersRef.current.forEach(trigger => trigger.kill());
       triggersRef.current = [];
     };
@@ -126,6 +133,21 @@ const About = () => {
   if (!aboutConfig.headingMain && !aboutConfig.headingAccent) return null;
 
   const featureIcons = [Award, Heart, Shield, Star];
+
+  const handleCtaClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    const href = aboutConfig.ctaHref || '#contact';
+    if (!href.startsWith('#')) return;
+
+    event.preventDefault();
+    window.dispatchEvent(
+      new CustomEvent('app:scroll-to', {
+        detail: {
+          target: href,
+          offset: window.innerWidth < 768 ? -6 : -10,
+        },
+      })
+    );
+  };
 
   return (
     <section
@@ -136,13 +158,13 @@ const About = () => {
       {/* Diagonal split line */}
       <div
         ref={diagonalRef}
-        className="absolute top-0 left-[60%] w-px h-[200%] bg-pink origin-top z-20"
+        className="hidden lg:block absolute top-0 left-[60%] w-px h-[200%] bg-pink origin-top z-20"
         style={{ transform: 'rotate(15deg)' }}
       />
 
       <div className="relative z-10 grid lg:grid-cols-5 min-h-screen">
         {/* Text content - 60% */}
-        <div className="lg:col-span-3 flex items-center px-6 lg:px-16 py-24">
+        <div className="lg:col-span-3 flex items-center px-6 lg:px-16 py-20 lg:py-24">
           <div ref={textRef} className="max-w-2xl">
             {aboutConfig.sectionLabel && (
               <div className="flex items-center gap-4 mb-6">
@@ -154,7 +176,7 @@ const About = () => {
             )}
 
             {(aboutConfig.headingMain || aboutConfig.headingAccent) && (
-              <h2 className="glitch-title font-display font-black text-5xl md:text-7xl lg:text-8xl text-white uppercase tracking-tight mb-8 leading-none">
+              <h2 className="glitch-title font-display font-black text-4xl sm:text-5xl md:text-7xl lg:text-8xl text-white uppercase tracking-tight mb-8 leading-none">
                 {aboutConfig.headingMain}
                 <br />
                 <span className="text-pink">{aboutConfig.headingAccent}</span>
@@ -168,7 +190,7 @@ const About = () => {
             )}
 
             {aboutConfig.features.length > 0 && (
-              <div className="grid grid-cols-2 gap-6 mb-12">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-12">
                 {aboutConfig.features.map((feature, index) => {
                   const Icon = featureIcons[index % featureIcons.length];
                   return (
@@ -188,6 +210,7 @@ const About = () => {
             {aboutConfig.ctaText && (
               <a
                 href={aboutConfig.ctaHref || '#'}
+                onClick={handleCtaClick}
                 className="group inline-flex items-center gap-4 px-8 py-4 bg-pink text-black font-display font-bold text-sm uppercase tracking-wider hover:bg-white transition-all duration-300"
                 data-cursor-hover
               >
