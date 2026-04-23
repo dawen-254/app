@@ -181,16 +181,20 @@ const Contact = () => {
           </div>
         )}
 
-        {/* Map placeholder */}
+        {/* Map */}
         <div className="mt-16 max-w-4xl mx-auto">
-          <div className="aspect-video bg-white/5 border border-white/10 flex items-center justify-center">
-            <div className="text-center">
-              <MapPin className="w-12 h-12 text-pink mx-auto mb-4" />
-              <p className="font-body text-white/40">
-                123 Beauty Lane, Suite 100<br />
-                Atlanta, GA 30309
-              </p>
-            </div>
+          <div className="aspect-video bg-white/5 border border-white/10 overflow-hidden">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.8149898562284!2d37.010679173516225!3d-1.0933964999999987!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x182f115fc496c501%3A0x7a4e0e0f0e0e0e0!2sJKUAT%20Gate%20C%2C%20Juja!5e0!3m2!1sen!2ske!4v1704067200000!5m2!1sen!2ske"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Salon Location"
+              className="w-full h-full"
+            />
           </div>
         </div>
       </div>

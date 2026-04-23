@@ -83,7 +83,6 @@ export interface ServicesConfig {
   headingAccent: string;
   serviceName: string;
   description: string;
-  price: string;
   features: ServiceFeature[];
   serviceImages: string[];
   serviceImageAlts: string[];
@@ -97,7 +96,6 @@ export const servicesConfig: ServicesConfig = {
   headingAccent: "Hair",
   serviceName: "Hair Styling & Extensions",
   description: "Transform your look with our expert hair services. From luxurious lace front wigs to stunning braids and protective styles, we create masterpieces that turn heads. Our skilled stylists use only premium human hair and the latest techniques to ensure you leave feeling confident and beautiful.",
-  price: "From $75",
   features: [
     { value: "100%", label: "Human Hair" },
     { value: "HD", label: "Lace Technology" },
@@ -237,7 +235,6 @@ export interface ServiceOption {
   id: string;
   name: string;
   duration: string;
-  price: string;
   category: "hair" | "nails";
 }
 
@@ -258,14 +255,14 @@ export const bookingConfig: BookingConfig = {
   headingAccent: "Your Visit",
   description: "Choose your preferred service and time slot. We'll confirm your appointment within 24 hours.",
   services: [
-    { id: "hair1", name: "Lace Front Wig Install", duration: "2-3 hrs", price: "$150", category: "hair" },
-    { id: "hair2", name: "Braids (Box/Fulani)", duration: "3-5 hrs", price: "$120", category: "hair" },
-    { id: "hair3", name: "Hair Wash & Style", duration: "1-2 hrs", price: "$75", category: "hair" },
-    { id: "hair4", name: "Wig Customization", duration: "1 hr", price: "$50", category: "hair" },
-    { id: "nail1", name: "Gel Manicure", duration: "45 min", price: "$45", category: "nails" },
-    { id: "nail2", name: "Acrylic Full Set", duration: "1.5 hrs", price: "$65", category: "nails" },
-    { id: "nail3", name: "Nail Art Design", duration: "30 min", price: "$25", category: "nails" },
-    { id: "nail4", name: "Pedicure", duration: "45 min", price: "$40", category: "nails" },
+    { id: "hair1", name: "Lace Front Wig Install", duration: "2-3 hrs", category: "hair" },
+    { id: "hair2", name: "Braids (Box/Fulani)", duration: "3-5 hrs", category: "hair" },
+    { id: "hair3", name: "Hair Wash & Style", duration: "1-2 hrs", category: "hair" },
+    { id: "hair4", name: "Wig Customization", duration: "1 hr", category: "hair" },
+    { id: "nail1", name: "Gel Manicure", duration: "45 min", category: "nails" },
+    { id: "nail2", name: "Acrylic Full Set", duration: "1.5 hrs", category: "nails" },
+    { id: "nail3", name: "Nail Art Design", duration: "30 min", category: "nails" },
+    { id: "nail4", name: "Pedicure", duration: "45 min", category: "nails" },
   ],
   timeSlots: [
     "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
@@ -330,18 +327,17 @@ export const contactConfig: ContactConfig = {
   sectionLabel: "GET IN TOUCH",
   headingMain: "Visit",
   headingAccent: "Us",
-  address: "123 Beauty Lane, Suite 100\nAtlanta, GA 30309",
-  phone: "(404) 555-LUXE",
-  email: "hello@luxebeautystudio.com",
+  address: "Gate C, JKUAT University\nJuja Town, Kenya",
+  phone: "0794973678",
+  email: "mitchelakinyi1@gmail.com",
   hours: [
     "Monday - Friday: 9:00 AM - 7:00 PM",
     "Saturday: 9:00 AM - 6:00 PM",
     "Sunday: Closed",
   ],
   socialLinks: [
-    { platform: "instagram", href: "https://instagram.com/luxebeautystudio", label: "@luxebeautystudio" },
-    { platform: "twitter", href: "https://twitter.com/luxebeauty", label: "@luxebeauty" },
-    { platform: "youtube", href: "https://youtube.com/luxebeautystudio", label: "Luxe Beauty Studio" },
+    { platform: "instagram", href: "https://instagram.com/just.mishy_", label: "just.mishy_" },
+    { platform: "tiktok", href: "https://www.tiktok.com/@mishy", label: "mishy 🦋🤍" },
   ],
   decorativeText: "CONTACT",
 };
@@ -351,7 +347,7 @@ export const contactConfig: ContactConfig = {
 // ----------------------------------------------------------------------------
 
 export interface SocialLink {
-  platform: "instagram" | "twitter" | "youtube";
+  platform: "instagram" | "tiktok";
   href: string;
   label: string;
 }
@@ -389,9 +385,8 @@ export const footerConfig: FooterConfig = {
   logoAccent: ".",
   brandDescription: "Premium Hair & Nail Studio - Where beauty meets excellence. Book your appointment today and experience the Luxe difference.",
   socialLinks: [
-    { platform: "instagram", href: "https://instagram.com/luxebeautystudio", label: "Instagram" },
-    { platform: "twitter", href: "https://twitter.com/luxebeauty", label: "Twitter" },
-    { platform: "youtube", href: "https://youtube.com/luxebeautystudio", label: "YouTube" },
+    { platform: "instagram", href: "https://instagram.com/just.mishy_", label: "Instagram" },
+    { platform: "tiktok", href: "https://www.tiktok.com/@mishy", label: "TikTok" },
   ],
   linkSections: [
     { title: "Services", links: ["Hair Styling", "Wig Install", "Braids", "Nail Art", "Manicure", "Pedicure"] },
@@ -399,9 +394,9 @@ export const footerConfig: FooterConfig = {
     { title: "Support", links: ["FAQ", "Booking Policy", "Cancellation", "Contact"] },
   ],
   contact: {
-    address: "123 Beauty Lane, Suite 100\nAtlanta, GA 30309",
-    phone: "(404) 555-LUXE",
-    email: "hello@luxebeautystudio.com",
+    address: "Gate C, JKUAT University\nJuja Town, Kenya",
+    phone: "0794973678",
+    email: "mitchelakinyi1@gmail.com",
   },
   legalLinks: [
     { label: "Privacy Policy", href: "#" },
@@ -440,6 +435,6 @@ export interface SiteConfig {
 
 export const siteConfig: SiteConfig = {
   title: "Luxe Beauty Studio | Premium Hair & Nail Services",
-  description: "Book your appointment at Luxe Beauty Studio for premium hair styling, wig installation, braids, and nail art services in Atlanta.",
+  description: "Book your appointment at Luxe Beauty Studio for premium hair styling, wig installation, braids, and nail art services in Juja, Kenya.",
   language: "en",
 };

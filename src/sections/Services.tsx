@@ -285,13 +285,6 @@ const Services = () => {
                 </div>
               )}
             </div>
-
-            {/* Price tag */}
-            {servicesConfig.price && (
-              <div className="absolute top-0 right-0 lg:right-12 bg-pink text-black px-4 sm:px-6 py-2 sm:py-3 font-display font-black text-xl sm:text-2xl">
-                {servicesConfig.price}
-              </div>
-            )}
           </div>
 
           {/* Service info */}

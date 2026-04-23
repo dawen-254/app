@@ -1,10 +1,11 @@
-import { Instagram, Twitter, Youtube, Mail, MapPin, Phone } from 'lucide-react';
+import { Instagram, Twitter, Youtube, Mail, MapPin, Phone, Music2 } from 'lucide-react';
 import { footerConfig } from '../config';
 
-const socialIconMap = {
+const socialIconMap: Record<string, any> = {
   instagram: Instagram,
   twitter: Twitter,
   youtube: Youtube,
+  tiktok: Music2,
 };
 
 const Footer = () => {
@@ -82,7 +83,7 @@ const Footer = () => {
               {footerConfig.contact.address && (
                 <div className="flex items-center gap-3 text-white/40">
                   <MapPin className="w-4 h-4 text-pink" />
-                  <span className="font-body text-sm">{footerConfig.contact.address}</span>
+                  <span className="font-body text-sm whitespace-pre-line">{footerConfig.contact.address}</span>
                 </div>
               )}
               {footerConfig.contact.phone && (
